@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 20px auto;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        label {
+            display: block;
+        }
+        input {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 8px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            font-size: 0.8em;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h2>Student Registration</h2>
+    <form id="regForm">
+        <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input type="text" id="firstName" name="firstName" required>
+            <span class="error" id="firstNameError">Name must be 2+ characters</span>
+        </div>
+        <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" name="lastName" required>
+            <span class="error" id="lastNameError">Name must be 2+ characters</span>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+            <span class="error" id="emailError">Invalid email</span>
+        </div>
+        <div class="form-group">
+            <label for="phone">Phone (123-456-7890)</label>
+            <input type="text" id="phone" name="phone" required>
+            <span class="error" id="phoneError">Invalid phone number</span>
+        </div>
+        <button type="submit">Register</button>
+    </form>
+
+    <script>
+        document.getElementById('regForm').onsubmit = function(event) {
+            event.preventDefault();
+
+            // Get form values
+            let firstName = document.getElementById('firstName').value;
+            let lastName = document.getElementById('lastName').value;
+            let email = document.getElementById('email').value;
+            let phone = document.getElementById('phone').value;
+
+            // Reset error messages
+            document.getElementById('firstNameError').style.display = 'none';
+            document.getElementById('lastNameError').style.display = 'none';
+            document.getElementById('emailError').style.display = 'none';
+            document.getElementById('phoneError').style.display = 'none';
+
+            // Validation
+            let isValid = true;
+            if (firstName.length < 2) {
+                document.getElementById('firstNameError').style.display = 'block';
+                isValid = false;
+            }
+            if (lastName.length < 2) {
+                document.getElementById('lastNameError').style.display = 'block';
+                isValid = false;
+            }
+            if (!email.includes('@') || !email.includes('.')) {
+                document.getElementById('emailError').style.display = 'block';
+                isValid = false;
+            }
+            if (!phone.match(/^\d{5}-\d{5}$/)) {
+                document.getElementById('phoneError').style.display = 'block';
+                isValid = false;
+            }
+
+            if (isValid) {
+                let formData = {
+                    firstName: firstName,
+                    lastName: lastName,
+                    email: email,
+                    phone: phone
+                };
+
+                // Log to console
+                console.log('Student Details:', formData);
+
+                // Send to server
+                fetch('https://jsonplaceholder.typicode.com/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Server Response:', data);
+                    alert('Registration successful!');
+                    document.getElementById('regForm').reset();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Registration failed!');
+                });
+            }
+        };
+    </script>
+</body>
+</html>
