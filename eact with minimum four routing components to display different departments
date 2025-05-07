@@ -1,0 +1,122 @@
+//App.jsx
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Home from './components/Home';
+import ComputerScience from './components/ComputerScience';
+import ElectricalEng from './components/ElectricalEng';
+import MechanicalEng from './components/MechanicalEng';
+import CivilEng from './components/CivilEng';
+import Navbar from './components/Navbar';
+import './App.css';
+
+function App() {
+  const [visitorCount, setVisitorCount] = useState(0);
+
+  useEffect(() => {
+    setVisitorCount(prevCount => prevCount + 1);
+  }, []);
+
+  return (
+    <Router>
+      <div className="App">
+        <Navbar />
+        <div className="visitor-counter">
+          Total Visitors: {visitorCount}
+        </div>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/computer-science" element={<ComputerScience />} />
+          <Route path="/electrical-engineering" element={<ElectricalEng />} />
+          <Route path="/mechanical-engineering" element={<MechanicalEng />} />
+          <Route path="/civil-engineering" element={<CivilEng />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+//components/Navbar.js
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const Navbar = () => {
+  return (
+    <nav className="navbar">
+      <ul>
+        <li><Link to="/">Home</Link></li>
+        <li><Link to="/computer-science">Computer Science</Link></li>
+        <li><Link to="/electrical-engineering">Electrical Engineering</Link></li>
+        <li><Link to="/mechanical-engineering">Mechanical Engineering</Link></li>
+        <li><Link to="/civil-engineering">Civil Engineering</Link></li>
+      </ul>
+    </nav>
+  );
+};
+
+export default Navbar;
+//components/Home.js
+import React from 'react';
+
+const Home = () => {
+  return (
+    <div className="home">
+      <h1>Welcome to Our College</h1>
+      <p>Select a department to learn more about our programs.</p>
+    </div>
+  );
+};
+
+export default Home;
+//components/ComputerScience.js
+import React from 'react';
+
+const ComputerScience = () => {
+  return (
+    <div className="department">
+      <h2>Computer Science Department</h2>
+      <p>Offering programs in Software Engineering, Data Science, and Artificial Intelligence.</p>
+    </div>
+  );
+};
+
+export default ComputerScience;
+//components/ElectricalEng.js
+import React from 'react';
+
+const ElectricalEng = () => {
+  return (
+    <div className="department">
+      <h2>Electrical Engineering Department</h2>
+      <p>Programs in Power Systems, Electronics, and Telecommunications.</p>
+    </div>
+  );
+};
+
+export default ElectricalEng;
+//components/MechanicalEng.js
+import React from 'react';
+
+const MechanicalEng = () => {
+  return (
+    <div className="department">
+      <h2>Mechanical Engineering Department</h2>
+      <p>Specializations in Thermodynamics, Robotics, and Automotive Engineering.</p>
+    </div>
+  );
+};
+
+export default MechanicalEng;
+//components/CivilEng.js
+import React from 'react';
+
+const CivilEng = () => {
+  return (
+    <div className="department">
+      <h2>Civil Engineering Department</h2>
+      <p>Programs in Structural Engineering, Transportation, and Environmental Engineering.</p>
+    </div>
+  );
+};
+
+export default CivilEng;
