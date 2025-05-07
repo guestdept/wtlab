@@ -1,0 +1,116 @@
+//App.jsx
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import './App.css';
+
+function App() {
+  const [employees, setEmployees] = useState([]);
+  const [name, setName] = useState('');
+  const [position, setPosition] = useState('');
+
+  // Get all employees
+  const getEmployees = async () => {
+    const response = await axios.get('http://localhost:5000/employees');
+    setEmployees(response.data);
+  };
+
+  // Add new employee
+  const addEmployee = async (e) => {
+    e.preventDefault();
+    await axios.post('http://localhost:5000/employees', { name, position });
+    setName('');
+    setPosition('');
+    getEmployees();
+  };
+
+  // Delete employee
+  const deleteEmployee = async (id) => {
+    await axios.delete(`http://localhost:5000/employees/${id}`);
+    getEmployees();
+  };
+
+  // Load employees on start
+  useEffect(() => {
+    getEmployees();
+  }, []);
+
+  return (
+    <div className="App">
+      <h1>Employee System</h1>
+      
+      <form onSubmit={addEmployee}>
+        <input 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          placeholder="Name" 
+          required 
+        />
+        <input 
+          value={position} 
+          onChange={(e) => setPosition(e.target.value)} 
+          placeholder="Position" 
+          required 
+        />
+        <button type="submit">Add</button>
+      </form>
+
+      <ul>
+        {employees.map(employee => (
+          <li key={employee._id}>
+            {employee.name} - {employee.position}
+            <button onClick={() => deleteEmployee(employee._id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default App;
+//server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/employeeDB', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+});
+
+// Employee Model
+const Employee = mongoose.model('Employee', {
+  name: String,
+  position: String
+});
+
+// Routes
+// Get all employees
+app.get('/employees', async (req, res) => {
+  const employees = await Employee.find();
+  res.send(employees);
+});
+
+// Add new employee
+app.post('/employees', async (req, res) => {
+  const employee = new Employee(req.body);
+  await employee.save();
+  res.send(employee);
+});
+
+// Delete employee
+app.delete('/employees/:id', async (req, res) => {
+  await Employee.findByIdAndDelete(req.params.id);
+  res.send({ message: 'Employee deleted' });
+});
+
+// Start server
+app.listen(5000, () => {
+  console.log('Server running on http://localhost:5000');
+});
