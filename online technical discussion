@@ -1,0 +1,295 @@
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Technical Discussion Forum</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Technical Discussion Forum</h1>
+
+    <!-- Form for Posting a Question -->
+    <h2>Post a Question</h2>
+    <form id="questionForm">
+        <label>Title:</label><br>
+        <input type="text" id="questionTitle" required><br><br>
+        <label>Content:</label><br>
+        <textarea id="questionContent" required></textarea><br><br>
+        <button type="button" onclick="postQuestion()">Submit Question</button>
+    </form>
+
+    <!-- Form for Posting an Answer -->
+    <h2>Post an Answer</h2>
+    <form id="answerForm">
+        <label>Question ID:</label><br>
+        <input type="text" id="answerQuestionId" required><br><br>
+        <label>Answer Content:</label><br>
+        <textarea id="answerContent" required></textarea><br><br>
+        <button type="button" onclick="postAnswer()">Submit Answer</button>
+    </form>
+
+    <!-- Search Form -->
+    <h2>Search Posts</h2>
+    <form id="searchForm">
+        <label>Search Term:</label><br>
+        <input type="text" id="searchTerm"><br><br>
+        <button type="button" onclick="searchPosts()">Search</button>
+    </form>
+
+    <!-- Display Posts -->
+    <h2>Discussion Posts</h2>
+    <div id="postsContainer"></div>
+
+    <script>
+        // Post a new question
+        async function postQuestion() {
+            const title = document.getElementById('questionTitle').value;
+            const content = document.getElementById('questionContent').value;
+
+            if (!title || !content) {
+                alert('Title and content are required');
+                return;
+            }
+
+            try {
+                await axios.post('http://localhost:3000/posts', { title, content, type: 'question' });
+                alert('Question posted successfully');
+                document.getElementById('questionForm').reset();
+                fetchPosts();
+            } catch (error) {
+                alert('Error posting question: ' + error.message);
+            }
+        }
+
+        // Post an answer
+        async function postAnswer() {
+            const questionId = document.getElementById('answerQuestionId').value;
+            const content = document.getElementById('answerContent').value;
+
+            if (!questionId || !content) {
+                alert('Question ID and answer content are required');
+                return;
+            }
+
+            try {
+                await axios.post(`http://localhost:3000/posts/${questionId}/answers`, { content });
+                alert('Answer posted successfully');
+                document.getElementById('answerForm').reset();
+                fetchPosts();
+            } catch (error) {
+                alert('Error posting answer: ' + error.message);
+            }
+        }
+
+        // Rate an answer
+        async function rateAnswer(postId, answerId, rating) {
+            try {
+                await axios.post(`http://localhost:3000/posts/${postId}/answers/${answerId}/rate`, { rating });
+                alert('Rating submitted');
+                fetchPosts();
+            } catch (error) {
+                alert('Error rating answer: ' + error.message);
+            }
+        }
+
+        // Delete a post
+        async function deletePost(postId) {
+            try {
+                await axios.delete(`http://localhost:3000/posts/${postId}`);
+                alert('Post deleted');
+                fetchPosts();
+            } catch (error) {
+                alert('Error deleting post: ' + error.message);
+            }
+        }
+
+        // Fetch and display all posts
+        async function fetchPosts() {
+            try {
+                const response = await axios.get('http://localhost:3000/posts');
+                const posts = response.data;
+                const container = document.getElementById('postsContainer');
+                container.innerHTML = '';
+                posts.forEach(post => {
+                    const postDiv = document.createElement('div');
+                    postDiv.innerHTML = `
+                        <h3>${post.title} (ID: ${post._id})</h3>
+                        <p>${post.content}</p>
+                        <p>Posted on: ${new Date(post.createdAt).toLocaleString()}</p>
+                        <button onclick="deletePost('${post._id}')">Delete</button>
+                        <h4>Answers:</h4>
+                        ${post.answers.map((answer, index) => `
+                            <p>Answer ${index + 1}: ${answer.content} (Rating: ${answer.rating || 0})</p>
+                            <button onclick="rateAnswer('${post._id}', '${answer._id}', 1)">Upvote</button>
+                            <button onclick="rateAnswer('${post._id}', '${answer._id}', -1)">Downvote</button>
+                        `).join('')}
+                    `;
+                    container.appendChild(postDiv);
+                });
+            } catch (error) {
+                alert('Error fetching posts: ' + error.message);
+            }
+        }
+
+        // Search posts
+        async function searchPosts() {
+            const searchTerm = document.getElementById('searchTerm').value;
+            try {
+                const response = await axios.get(`http://localhost:3000/posts/search?term=${encodeURIComponent(searchTerm)}`);
+                const posts = response.data;
+                const container = document.getElementById('postsContainer');
+                container.innerHTML = '';
+                posts.forEach(post => {
+                    const postDiv = document.createElement('div');
+                    postDiv.innerHTML = `
+                        <h3>${post.title} (ID: ${post._id})</h3>
+                        <p>${post.content}</p>
+                        <p>Posted on: ${new Date(post.createdAt).toLocaleString()}</p>
+                        <button onclick="deletePost('${post._id}')">Delete</button>
+                        <h4>Answers:</h4>
+                        ${post.answers.map((answer, index) => `
+                            <p>Answer ${index + 1}: ${answer.content} (Rating: ${answer.rating || 0})</p>
+                            <button onclick="rateAnswer('${post._id}', '${answer._id}', 1)">Upvote</button>
+                            <button onclick="rateAnswer('${post._id}', '${answer._id}', -1)">Downvote</button>
+                        `).join('')}
+                    `;
+                    container.appendChild(postDiv);
+                });
+            } catch (error) {
+                alert('Error searching posts: ' + error.message);
+            }
+        }
+
+        // Initial fetch of posts
+        fetchPosts();
+    </script>
+</body>
+</html>
+server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const app = express();
+const port = 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// MongoDB Connection
+mongoose.connect('mongodb://localhost:27017/discussion_forum', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => {
+    console.log('Connected to MongoDB');
+}).catch(err => {
+    console.error('MongoDB connection error:', err);
+});
+
+// Post Schema
+const postSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    content: { type: String, required: true },
+    type: { type: String, default: 'question' },
+    createdAt: { type: Date, default: Date.now },
+    answers: [{
+        content: { type: String, required: true },
+        rating: { type: Number, default: 0 },
+        createdAt: { type: Date, default: Date.now }
+    }]
+});
+
+const Post = mongoose.model('Post', postSchema);
+
+// CRUD Routes
+// Create a post
+app.post('/posts', async (req, res) => {
+    try {
+        const { title, content, type } = req.body;
+        const post = new Post({ title, content, type });
+        await post.save();
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all posts
+app.get('/posts', async (req, res) => {
+    try {
+        const posts = await Post.find();
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Search posts
+app.get('/posts/search', async (req, res) => {
+    try {
+        const { term } = req.query;
+        const posts = await Post.find({
+            $or: [
+                { title: { $regex: term, $options: 'i' } },
+                { content: { $regex: term, $options: 'i' } }
+            ]
+        });
+        res.json(posts);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Add an answer to a post
+app.post('/posts/:postId/answers', async (req, res) => {
+    try {
+        const { content } = req.body;
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        post.answers.push({ content });
+        await post.save();
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rate an answer
+app.post('/posts/:postId/answers/:answerId/rate', async (req, res) => {
+    try {
+        const { rating } = req.body;
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        const answer = post.answers.id(req.params.answerId);
+        if (!answer) {
+            return res.status(404).json({ error: 'Answer not found' });
+        }
+        answer.rating += rating;
+        await post.save();
+        res.json(post);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Delete a post
+app.delete('/posts/:postId', async (req, res) => {
+    try {
+        const post = await Post.findByIdAndDelete(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+        res.json({ message: 'Post deleted' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Start server
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+});
