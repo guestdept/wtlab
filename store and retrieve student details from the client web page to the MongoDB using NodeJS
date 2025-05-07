@@ -1,0 +1,87 @@
+//index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student System</title>
+</head>
+<body>
+  <h1>Student Management</h1>
+  
+  <form id="studentForm">
+    <input type="text" id="name" placeholder="Student Name" required>
+    <input type="number" id="age" placeholder="Age" required>
+    <button type="submit">Add Student</button>
+  </form>
+
+  <h2>Students List</h2>
+  <ul id="studentList"></ul>
+
+  <script>
+    const form = document.getElementById('studentForm');
+    const list = document.getElementById('studentList');
+
+    // Add new student
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const student = {
+        name: document.getElementById('name').value,
+        age: document.getElementById('age').value
+      };
+      
+      await fetch('http://localhost:5000/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(student)
+      });
+      
+      form.reset();
+      loadStudents();
+    });
+
+    // Load all students
+    async function loadStudents() {
+      const response = await fetch('http://localhost:5000/students');
+      const students = await response.json();
+      
+      list.innerHTML = students.map(student => 
+        `<li>${student.name} (${student.age} years old)</li>`
+      ).join('');
+    }
+
+    // Initial load
+    loadStudents();
+  </script>
+</body>
+</html>
+//server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/studentDB');
+
+// Student Schema
+const studentSchema = new mongoose.Schema({
+  name: String,
+  age: Number
+});
+const Student = mongoose.model('Student', studentSchema);
+
+// Routes
+app.post('/students', async (req, res) => {
+  const student = new Student(req.body);
+  await student.save();
+  res.send(student);
+});
+
+app.get('/students', async (req, res) => {
+  const students = await Student.find();
+  res.send(students);
+});
+
+app.listen(5000, () => console.log('Server running on port 5000'));
