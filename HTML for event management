@@ -1,0 +1,76 @@
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Event Registration</title>
+  <script>
+    function validateForm() {
+      const name = document.forms["regForm"]["name"].value;
+      const email = document.forms["regForm"]["email"].value;
+      const event = document.forms["regForm"]["event"].value;
+
+      if (!name || !email || !event) {
+        alert("All fields are required!");
+        return false;
+      }
+
+      if (!email.includes("@")) {
+        alert("Invalid email format!");
+        return false;
+      }
+
+      // Send data using fetch
+      fetch("http://localhost:5000/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, event })
+      })
+      .then(res => res.text())
+      .then(data => alert(data))
+      .catch(err => console.log(err));
+
+      return false; // Prevent default form submission
+    }
+  </script>
+</head>
+<body>
+  <h2>Event Registration Form</h2>
+  <form name="regForm" onsubmit="return validateForm()">
+    <input type="text" name="name" placeholder="Your Name" /><br><br>
+    <input type="text" name="email" placeholder="Your Email" /><br><br>
+    <input type="text" name="event" placeholder="Event Name" /><br><br>
+    <button type="submit">Register</button>
+  </form>
+</body>
+</html>
+server.js
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+mongoose.connect("mongodb://localhost:27017/eventDB");
+
+const EventSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  event: String
+});
+
+const Event = mongoose.model('Event', EventSchema);
+
+app.post('/register', async (req, res) => {
+  const { name, email, event } = req.body;
+  try {
+    const newEvent = new Event({ name, email, event });
+    await newEvent.save();
+    res.send("Registration Successful!");
+  } catch (err) {
+    res.status(500).send("Error saving registration.");
+  }
+});
+
+app.listen(5000, () => console.log("Server started on port 5000"));
