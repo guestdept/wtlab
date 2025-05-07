@@ -1,0 +1,131 @@
+//index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple CRUD</title>
+  <style>
+    body { font-family: Arial; max-width: 500px; margin: 0 auto; padding: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { margin: 5px 0; padding: 8px; background: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <h1>Simple CRUD</h1>
+  
+  <input id="itemInput" placeholder="Enter item name">
+  <button onclick="addItem()">Add Item</button>
+  
+  <ul id="itemsList"></ul>
+
+  <script>
+    const API_URL = 'http://localhost:3000/items';
+
+    // Load all items
+    async function loadItems() {
+      const res = await fetch(API_URL);
+      const items = await res.json();
+      const list = document.getElementById('itemsList');
+      list.innerHTML = items.map(item => `
+        <li>
+          ${item.name}
+          <button onclick="editItem('${item._id}', '${item.name}')">Edit</button>
+          <button onclick="deleteItem('${item._id}')">Delete</button>
+        </li>
+      `).join('');
+    }
+
+    // Add new item
+    async function addItem() {
+      const name = document.getElementById('itemInput').value;
+      if (!name) return alert('Enter a name!');
+      
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      
+      document.getElementById('itemInput').value = '';
+      loadItems();
+    }
+
+    // Edit item
+    async function editItem(id, oldName) {
+      const newName = prompt('Edit item name:', oldName);
+      if (!newName) return;
+      
+      await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName })
+      });
+      
+      loadItems();
+    }
+
+    // Delete item
+    async function deleteItem(id) {
+      if (!confirm('Delete this item?')) return;
+      await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+      loadItems();
+    }
+
+    // Load items on page load
+    loadItems();
+  </script>
+</body>
+</html>
+//server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const app = express();
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/simplecrud')
+  .then(() => console.log('✔️ Connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB Error:', err));
+
+// Item Model
+const Item = mongoose.model('Item', { name: String });
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Routes
+// Create
+app.post('/items', async (req, res) => {
+  const item = new Item(req.body);
+  await item.save();
+  res.send(item);
+});
+
+// Read All
+app.get('/items', async (req, res) => {
+  const items = await Item.find();
+  res.send(items);
+});
+
+// Read One
+app.get('/items/:id', async (req, res) => {
+  const item = await Item.findById(req.params.id);
+  res.send(item);
+});
+
+// Update
+app.put('/items/:id', async (req, res) => {
+  const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.send(item);
+});
+
+// Delete
+app.delete('/items/:id', async (req, res) => {
+  await Item.findByIdAndDelete(req.params.id);
+  res.send({ message: 'Item deleted' });
+});
+
+// Start Server
+app.listen(3000, () => console.log('🚀 Server running on http://localhost:3000'));
