@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadhar Card Application</title>
+</head>
+<body>
+    <h1>Aadhar Card Application Form</h1>
+    <form id="aadharForm" action="/submit-aadhar" method="POST">
+        <div>
+            <label for="fullName">Full Name:</label>
+            <input type="text" id="fullName" name="fullName" required>
+        </div>
+
+        <div>
+            <label for="dob">Date of Birth:</label>
+            <input type="date" id="dob" name="dob" required>
+        </div>
+
+        <div>
+            <label for="gender">Gender:</label>
+            <select id="gender" name="gender" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <div>
+            <label for="address">Address:</label>
+            <textarea id="address" name="address" rows="4" required></textarea>
+        </div>
+
+        <div>
+            <label for="city">City:</label>
+            <input type="text" id="city" name="city" required>
+        </div>
+
+        <div>
+            <label for="state">State:</label>
+            <input type="text" id="state" name="state" required>
+        </div>
+
+        <div>
+            <label for="pincode">Pincode:</label>
+            <input type="text" id="pincode" name="pincode" required>
+        </div>
+
+        <div>
+            <label for="mobile">Mobile Number:</label>
+            <input type="tel" id="mobile" name="mobile" required>
+        </div>
+
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email">
+        </div>
+
+        <div>
+            <button type="submit">Submit Application</button>
+        </div>
+    </form>
+
+    <script>
+        document.getElementById('aadharForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const response = await fetch(this.action, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            alert(result.message);
+        });
+    </script>
+</body>
+</html>
+
+server.js
+
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const app = express();
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/aadharDB', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// Define Aadhar schema
+const aadharSchema = new mongoose.Schema({
+    fullName: String,
+    dob: Date,
+    gender: String,
+    address: String,
+    city: String,
+    state: String,
+    pincode: String,
+    mobile: String,
+    email: String,
+    applicationDate: { type: Date, default: Date.now }
+});
+
+const AadharApplication = mongoose.model('AadharApplication', aadharSchema);
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+// Serve static files (HTML)
+app.use(express.static('public'));
+
+// Handle form submission
+app.post('/submit-aadhar', async (req, res) => {
+    try {
+        const newApplication = new AadharApplication({
+            fullName: req.body.fullName,
+            dob: req.body.dob,
+            gender: req.body.gender,
+            address: req.body.address,
+            city: req.body.city,
+            state: req.body.state,
+            pincode: req.body.pincode,
+            mobile: req.body.mobile,
+            email: req.body.email
+        });
+
+        await newApplication.save();
+        res.json({ message: 'Aadhar application submitted successfully!' });
+    } catch (error) {
+        console.error('Error saving application:', error);
+        res.status(500).json({ message: 'Error submitting application' });
+    }
+});
+
+// Start server
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
