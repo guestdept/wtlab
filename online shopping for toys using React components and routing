@@ -1,0 +1,134 @@
+toy-shop/
+├── client/                     # React frontend
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ToyList.js
+│   │   │   └── OrderForm.js
+│   │   ├── App.js
+│   │   └── index.js
+├── server/                    # Node.js backend
+│   ├── Order.js
+│   └── server.js
+
+client/src/components/ToyList.js
+import { Link } from "react-router-dom";
+
+function ToyList() {
+  const toys = ["Car", "Doll", "Blocks"];
+
+  return (
+    <div>
+      <h2>Select a Toy</h2>
+      <ul>
+        {toys.map(toy => (
+          <li key={toy}>
+            {toy} - <Link to={`/order/${toy}`}>Buy</Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default ToyList;
+
+client/src/components/OrderForm.js
+import { useParams } from "react-router-dom";
+import { useState } from "react";
+
+function OrderForm() {
+  const { toy } = useParams();
+  const [name, setName] = useState("");
+
+  const placeOrder = async (e) => {
+    e.preventDefault();
+    await fetch("http://localhost:8080/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, toy }),
+    });
+    alert("Order placed!");
+  };
+
+  return (
+    <div>
+      <h2>Buy: {toy}</h2>
+      <form onSubmit={placeOrder}>
+        Name: <input value={name} onChange={(e) => setName(e.target.value)} /><br /><br />
+        <button type="submit">Place Order</button>
+      </form>
+    </div>
+  );
+}
+
+export default OrderForm;
+
+client/src/App.js
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ToyList from "./components/ToyList";
+import OrderForm from "./components/OrderForm";
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<ToyList />} />
+        <Route path="/order/:toy" element={<OrderForm />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+export default App;
+
+client/src/index.js
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<App />);
+
+server/Order.js
+const mongoose = require('mongoose');
+
+const orderSchema = new mongoose.Schema({
+  name: String,
+  toy: String
+});
+
+module.exports = mongoose.model("Order", orderSchema);
+
+server/server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const Order = require('./Order');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+mongoose.connect("mongodb://localhost:27017/ToyShop")
+  .then(() => console.log("MongoDB connected"));
+
+app.post("/order", async (req, res) => {
+  const { name, toy } = req.body;
+  const order = new Order({ name, toy });
+  await order.save();
+  res.send("Order received");
+});
+
+app.listen(8080, () => console.log("Server running at http://localhost:8080"));
+
+Start Backend
+cd server
+npm init -y
+npm install express mongoose cors
+node server.js
+
+Start Frontend
+cd client
+npx create-react-app .
+npm install react-router-dom
+npm start
