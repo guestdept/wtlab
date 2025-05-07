@@ -1,0 +1,106 @@
+//index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Weather App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .weather-container {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+        }
+        .error {
+            color: red;
+            margin: 10px 0;
+        }
+        .weather-info {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Checker</h1>
+    <div>
+        <input type="text" id="locationInput" placeholder="Enter city name">
+        <button id="searchBtn">Get Weather</button>
+        <div id="errorMsg" class="error"></div>
+    </div>
+
+    <div id="weatherContainer" class="weather-container" style="display: none;">
+        <h2 id="cityName"></h2>
+        <div class="weather-info">
+            <div>Temperature: <span id="temp"></span>°C</div>
+            <div>Weather: <span id="weatherDesc"></span></div>
+            <div>Humidity: <span id="humidity"></span>%</div>
+            <div>Wind: <span id="wind"></span> km/h</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+//script.js
+document.getElementById('searchBtn').addEventListener('click', getWeather);
+
+function getWeather() {
+    const location = document.getElementById('locationInput').value.trim();
+    const errorElement = document.getElementById('errorMsg');
+    
+    // Input validation
+    if (!location) {
+        errorElement.textContent = "Please enter a city name";
+        return;
+    }
+    
+    if (!/^[a-zA-Z\s,]+$/.test(location)) {
+        errorElement.textContent = "City name can only contain letters and spaces";
+        return;
+    }
+    
+    errorElement.textContent = "";
+    
+    // Replace with your actual API key from OpenWeatherMap
+    const apiKey = 'YOUR_API_KEY';
+    const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${apiKey}`;
+    
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('City not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayWeather(data);
+        })
+        .catch(error => {
+            errorElement.textContent = error.message;
+            document.getElementById('weatherContainer').style.display = 'none';
+        });
+}
+
+function displayWeather(data) {
+    const weatherContainer = document.getElementById('weatherContainer');
+    document.getElementById('cityName').textContent = data.name + ", " + data.sys.country;
+    document.getElementById('temp').textContent = Math.round(data.main.temp);
+    document.getElementById('weatherDesc').textContent = data.weather[0].description;
+    document.getElementById('humidity').textContent = data.main.humidity;
+    document.getElementById('wind').textContent = Math.round(data.wind.speed * 3.6); // Convert m/s to km/h
+    
+    weatherContainer.style.display = 'block';
+}
