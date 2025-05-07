@@ -1,0 +1,69 @@
+//index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Animal Facts</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #result, #error {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #error {
+            color: red;
+            background: #ffeeee;
+        }
+        #result {
+            background: #f0fff0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Animal Facts</h1>
+    <input type="text" id="animalInput" placeholder="Enter animal name">
+    <button onclick="getFacts()">Get Facts</button>
+    
+    <div id="error"></div>
+    <div id="result"></div>
+
+    <script>
+        function getFacts() {
+            const animal = document.getElementById('animalInput').value.trim();
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+            
+            // Clear previous results
+            errorDiv.textContent = '';
+            resultDiv.textContent = '';
+            
+            // Very simple validation
+            if (animal === '') {
+                errorDiv.textContent = 'Please enter an animal name';
+                return;
+            }
+            
+            // Simple API call (using a free no-key API)
+            fetch(`https://some-random-api.ml/animal/${animal.toLowerCase()}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Animal not found');
+                    return response.json();
+                })
+                .then(data => {
+                    resultDiv.innerHTML = `
+                        <h3>${animal}</h3>
+                        <p><strong>Fact:</strong> ${data.fact || 'No fact available'}</p>
+                    `;
+                })
+                .catch(error => {
+                    errorDiv.textContent = `Error: ${error.message}`;
+                });
+        }
+    </script>
+</body>
+</html>
