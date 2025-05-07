@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Movie Details</title>
+</head>
+<body>
+  <h2>Movie Details</h2>
+  <input type="text" id="title" placeholder="Enter movie title" />
+  <input type="text" id="year" placeholder="Enter year (optional)" />
+  <button onclick="getMovie()">Get Details</button>
+  <div id="result"></div>
+
+  <script>
+    async function getMovie() {
+      const title = document.getElementById("title").value.trim();
+      const year = document.getElementById("year").value.trim();
+      const result = document.getElementById("result");
+      result.innerHTML = "";
+
+      if (!title) {
+        alert("Enter a movie title");
+        return;
+      }
+
+      if (year && !/^\d{4}$/.test(year)) {
+        alert("Enter a valid 4-digit year");
+        return;
+      }
+
+      const apiKey = "your_api_key"; // Replace with your OMDb API key
+      const url = `https://www.omdbapi.com/?t=${encodeURIComponent(title)}${year ? `&y=${year}` : ''}&apikey=${apiKey}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.Response === "False") {
+          result.innerHTML = "Movie not found";
+        } else {
+          result.innerHTML = `
+            <p><strong>Title:</strong> ${data.Title}</p>
+            <p><strong>Year:</strong> ${data.Year}</p>
+            <p><strong>Genre:</strong> ${data.Genre}</p>
+            <p><strong>Plot:</strong> ${data.Plot}</p>
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = "Error fetching data";
+      }
+    }
+  </script>
+</body>
+</html>
