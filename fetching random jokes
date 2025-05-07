@@ -1,0 +1,69 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const axios = require('axios');
+const path = require('path');
+
+const app = express();
+const PORT = 3000;
+
+// MongoDB connection
+mongoose.connect('mongodb://127.0.0.1:27017/jokesDB', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+}).then(() => console.log('MongoDB connected'))
+  .catch(err => console.log(err));
+
+// Joke Schema
+const jokeSchema = new mongoose.Schema({
+  setup: String,
+  punchline: String
+});
+const Joke = mongoose.model('Joke', jokeSchema);
+
+// Serve frontend HTML
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Random Joke</title>
+    </head>
+    <body>
+      <h1>Get a Random Joke</h1>
+      <button onclick="getJoke()">Get Joke</button>
+      <p id="joke"></p>
+      
+      <script>
+        async function getJoke() {
+          const res = await fetch('/joke');
+          const text = await res.text();
+          document.getElementById('joke').innerText = text;
+        }
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+// API to fetch and save joke
+app.get('/joke', async (req, res) => {
+  try {
+    const response = await axios.get('https://official-joke-api.appspot.com/random_joke');
+    const { setup, punchline } = response.data;
+
+    const joke = new Joke({ setup, punchline });
+    await joke.save();
+
+    res.send(`${setup} - ${punchline}`);
+  } catch (err) {
+    res.status(500).send('Error fetching or saving joke');
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});
+//
+dependencie:
+npm init -y
+npm install express mongoose axios
