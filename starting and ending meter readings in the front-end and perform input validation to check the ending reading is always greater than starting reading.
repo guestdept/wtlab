@@ -1,0 +1,177 @@
+//public/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meter Reading System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        form {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Electricity Billing System</h1>
+    
+    <form id="readingForm">
+        <label for="startReading">Starting Meter Reading:</label>
+        <input type="number" id="startReading" min="0" required>
+        
+        <label for="endReading">Ending Meter Reading:</label>
+        <input type="number" id="endReading" min="0" required>
+        <div id="readingError" class="error"></div>
+        
+        <button type="submit">Calculate Bill</button>
+    </form>
+    
+    <div id="result">
+        <h2>Billing Details</h2>
+        <p>Units Consumed: <span id="units"></span></p>
+        <p>Total Amount: ₹<span id="amount"></span></p>
+    </div>
+
+    <script>
+        document.getElementById('readingForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Get values
+            const start = parseInt(document.getElementById('startReading').value);
+            const end = parseInt(document.getElementById('endReading').value);
+            const errorDiv = document.getElementById('readingError');
+            
+            // Reset
+            errorDiv.textContent = '';
+            document.getElementById('result').style.display = 'none';
+            
+            // Validation
+            if (end <= start) {
+                errorDiv.textContent = 'End reading must be greater than start reading';
+                return;
+            }
+            
+            try {
+                // Send data to server
+                const response = await fetch(`http://localhost:3000/calculate?start=${start}&end=${end}`);
+                
+                if (!response.ok) {
+                    throw new Error('Calculation failed');
+                }
+                
+                const data = await response.json();
+                
+                // Display results
+                document.getElementById('units').textContent = data.units;
+                document.getElementById('amount').textContent = data.amount;
+                document.getElementById('result').style.display = 'block';
+                
+            } catch (error) {
+                errorDiv.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
+//server.js
+const express = require('express');
+const app = express();
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+// Calculate bill based on units consumed
+function calculateBill(units) {
+    // Simple rate structure (customize as needed)
+    if (units <= 100) {
+        return units * 3.5;  // ₹3.5 per unit for first 100 units
+    } else if (units <= 200) {
+        return 100 * 3.5 + (units - 100) * 4.5;  // ₹4.5 for next 100
+    } else {
+        return 100 * 3.5 + 100 * 4.5 + (units - 200) * 6.0;  // ₹6.0 beyond 200
+    }
+}
+
+// API endpoint for calculation
+app.get('/calculate', (req, res) => {
+    const start = parseInt(req.query.start);
+    const end = parseInt(req.query.end);
+    
+    // Validate inputs
+    if (isNaN(start) || isNaN(end)) {
+        return res.status(400).json({ error: 'Invalid readings' });
+    }
+    
+    if (end <= start) {
+        return res.status(400).json({ error: 'End reading must be greater than start' });
+    }
+    
+    // Calculate
+    const units = end - start;
+    const amount = calculateBill(units);
+    
+    // Return result
+    res.json({
+        units,
+        amount: amount.toFixed(2)
+    });
+});
+
+// Serve static files
+app.use(express.static('public'));
+
+// Start server
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+});
