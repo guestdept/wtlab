@@ -1,0 +1,95 @@
+account/
+├── public/
+│   ├── index.html   # Frontend (HTML only)
+│   └── style.css    # Basic styling (optional)
+├── server.js        # Backend (Node.js)
+└── package.json
+
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Account Lookup</title>
+</head>
+<body>
+  <h1>Find Your Account Details</h1>
+  <form id="accountForm">
+    <input type="text" id="accountNo" placeholder="Enter Account Number" required>
+    <button type="submit">Get Details</button>
+  </form>
+  <div id="details"></div>
+
+  <script>
+    document.getElementById('accountForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const accountNo = document.getElementById('accountNo').value;
+
+      try {
+        const response = await fetch('http://localhost:3000/account', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accountNo })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('details').innerHTML = `
+            <h3>Account Details</h3>
+            <p>Name: ${data.name}</p>
+            <p>Account No: ${data.accountNo}</p>
+            <p>Balance: ${data.balance}</p>
+          `;
+        } else {
+          document.getElementById('details').innerHTML = `Error: ${data.error}`;
+        }
+      } catch (err) {
+        document.getElementById('details').innerHTML = `Error: ${err.message}`;
+      }
+    });
+  </script>
+</body>
+</html>
+
+server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+// Connect to MongoDB
+mongoose.connect("mongodb://127.0.0.1:27017/bankDB")
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("MongoDB connection error:", err));
+
+// Define Account model
+const Account = mongoose.model("Account", {
+  accountNo: String,
+  name: String,
+  balance: Number
+});
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// POST route to get account details
+app.post('/account', async (req, res) => {
+  const { accountNo } = req.body;
+  try {
+    const account = await Account.findOne({ accountNo });
+    if (account) {
+      res.json(account);
+    } else {
+      res.status(404).json({ error: "Account not found" });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Start server
+app.listen(3000, () => console.log("Server running on http://localhost:3000"));
+
+
+npm init -y
+npm install express mongoose cors
