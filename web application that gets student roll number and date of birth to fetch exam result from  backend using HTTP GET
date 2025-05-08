@@ -1,0 +1,92 @@
+student-result/
+├── public/
+│   ├── index.html   # Frontend (HTML only)
+│   └── style.css    # Basic styling (optional)
+├── server.js        # Backend (Node.js)
+└── package.json
+
+mkdir student-result
+cd student-result
+npm init -y
+npm install express mongoose cors
+
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Student Result Checker</title>
+</head>
+<body>
+    <h1>Check Your Exam Result</h1>
+    <form id="resultForm">
+        <input type="text" id="rollNo" placeholder="Enter Roll Number" required>
+        <input type="date" id="dob" required>
+        <button type="submit">Get Result</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('resultForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rollNo = document.getElementById('rollNo').value;
+            const dob = document.getElementById('dob').value;
+
+            try {
+                const response = await fetch(`http://localhost:3000/results?rollNo=${rollNo}&dob=${dob}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('result').innerHTML = `
+                        <h3>Result for ${data.rollNo}</h3>
+                        <p>Name: ${data.name}</p>
+                        <p>Marks: ${data.marks}</p>
+                        <p>Grade: ${data.grade}</p>
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `Error: ${data.error}`;
+                }
+            } catch (err) {
+                document.getElementById('result').innerHTML = `Error: ${err.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
+
+server.js
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
+// Connect to MongoDB
+mongoose.connect("mongodb://127.0.0.1:27017/resultsDB")
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("MongoDB error:", err));
+
+// Define Result model
+const Result = mongoose.model("Result", {
+  rollNo: String,
+  dob: String,
+  name: String,
+  marks: Number,
+  grade: String
+});
+
+// Create Express app
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// Result fetch endpoint
+app.get("/results", async (req, res) => {
+  const { rollNo, dob } = req.query;
+  try {
+    const result = await Result.findOne({ rollNo, dob });
+    result ? res.json(result) : res.status(404).json({ error: "Result not found" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Start server
+app.listen(3000, () => console.log("Server running on port 3000"));
