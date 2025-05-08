@@ -1,0 +1,140 @@
+src/
+├── components/
+│   ├── ThemeSelector.jsx
+│   ├── EventDisplay.jsx
+│   ├── RegistrationToggle.jsx
+│   ├── LiveUpdates.jsx
+│   └── AdminPanel.jsx
+├── App.jsx
+└── main.jsx
+
+npm create vite@latest college-festival -- --template react
+cd college-festival
+npm install
+
+ThemeSelector.jsx
+export default function ThemeSelector({ setTheme }) {
+    return (
+        <div>
+            <h2>Festival Theme</h2>
+            <button onClick={() => setTheme('traditional')}>Traditional</button>
+            <button onClick={() => setTheme('modern')}>Modern</button>
+        </div>
+    );
+}
+
+EventDisplay.jsx
+export default function EventDisplay({ theme }) {
+    return (
+        <div>
+            <h2>Today's Events</h2>
+            {!theme && <p>Please select a theme first</p>}
+            {theme === 'traditional' && (
+                <ul>
+                    <li>10:00 AM - Classical Dance</li>
+                    <li>02:00 PM - Folk Music</li>
+                </ul>
+            )}
+            {theme === 'modern' && (
+                <ul>
+                    <li>11:00 AM - Digital Art Show</li>
+                    <li>03:00 PM - Beatboxing</li>
+                </ul>
+            )}
+        </div>
+    );
+}
+
+RegistrationToggle.jsx
+import { useState } from 'react';
+
+export default function RegistrationToggle() {
+    const [registered, setRegistered] = useState(false);
+
+    return (
+        <div>
+            <h2>Registration</h2>
+            {registered ? (
+                <div>
+                    <p>You are registered!</p>
+                    <button onClick={() => setRegistered(false)}>Cancel</button>
+                </div>
+            ) : (
+                <button onClick={() => setRegistered(true)}>Register Now</button>
+            )}
+        </div>
+    );
+}
+
+LiveUpdates.jsx
+import { useState } from 'react';
+
+export default function LiveUpdates() {
+    const [updates, setUpdates] = useState(0);
+    
+    return (
+        <div>
+            <h2>Live Updates</h2>
+            <p>Announcements: {updates}</p>
+            <button onClick={() => setUpdates(u => u + 1)}>
+                New Update
+            </button>
+        </div>
+    );
+}
+
+AdminPanel.jsx
+export default function AdminPanel({ isAdmin }) {
+    return (
+        <div>
+            <h2>Admin Controls</h2>
+            {isAdmin ? (
+                <div>
+                    <button>Add Event</button>
+                    <button>Send Alert</button>
+                </div>
+            ) : (
+                <p>Admin access required</p>
+            )}
+        </div>
+    );
+}
+
+App.jsx
+import { useState } from 'react';
+import ThemeSelector from './components/ThemeSelector';
+import EventDisplay from './components/EventDisplay';
+import RegistrationToggle from './components/RegistrationToggle';
+import LiveUpdates from './components/LiveUpdates';
+import AdminPanel from './components/AdminPanel';
+
+export default function App() {
+    const [theme, setTheme] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    return (
+        <div>
+            <h1>College Cultural Festival</h1>
+            <button onClick={() => setIsAdmin(!isAdmin)}>
+                {isAdmin ? 'Exit Admin' : 'Admin Login'}
+            </button>
+            
+            <ThemeSelector setTheme={setTheme} />
+            <EventDisplay theme={theme} />
+            <RegistrationToggle />
+            <LiveUpdates />
+            <AdminPanel isAdmin={isAdmin} />
+        </div>
+    );
+}
+
+main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+        <App />
+    </React.StrictMode>
+);
