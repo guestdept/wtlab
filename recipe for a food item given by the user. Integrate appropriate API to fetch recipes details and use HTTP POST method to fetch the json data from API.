@@ -1,0 +1,155 @@
+//index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Finder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        #search-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        #recipe-input {
+            padding: 10px;
+            width: 300px;
+            font-size: 16px;
+        }
+        #search-btn {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #search-btn:hover {
+            background-color: #45a049;
+        }
+        #error-msg {
+            color: red;
+            text-align: center;
+            margin: 10px 0;
+        }
+        #recipe-results {
+            margin-top: 30px;
+        }
+        .recipe-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .recipe-title {
+            color: #333;
+            margin-top: 0;
+        }
+        .recipe-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Recipe Finder</h1>
+    
+    <div id="search-container">
+        <input type="text" id="recipe-input" placeholder="Enter a food item (e.g., pizza, pasta)">
+        <button id="search-btn">Search Recipes</button>
+        <div id="error-msg"></div>
+    </div>
+    
+    <div id="recipe-results"></div>
+
+    <script>
+        document.getElementById('search-btn').addEventListener('click', searchRecipes);
+        
+        function searchRecipes() {
+            const recipeName = document.getElementById('recipe-input').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.textContent = '';
+            
+            // Input validation
+            if (!recipeName) {
+                errorMsg.textContent = 'Please enter a recipe name';
+                return;
+            }
+            
+            if (!/^[a-zA-Z\s]+$/.test(recipeName)) {
+                errorMsg.textContent = 'Recipe name should only contain letters and spaces';
+                return;
+            }
+            
+            // Fetch recipes from API
+            fetchRecipes(recipeName);
+        }
+        
+        async function fetchRecipes(query) {
+            try {
+                const response = await fetch('https://api.edamam.com/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        q: query,
+                        app_id: 'YOUR_APP_ID', // Replace with your Edamam API ID
+                        app_key: 'YOUR_APP_KEY' // Replace with your Edamam API key
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch recipes');
+                }
+                
+                const data = await response.json();
+                displayRecipes(data.hits);
+            } catch (error) {
+                document.getElementById('error-msg').textContent = 'Error fetching recipes: ' + error.message;
+                console.error('Error:', error);
+            }
+        }
+        
+        function displayRecipes(recipes) {
+            const resultsContainer = document.getElementById('recipe-results');
+            resultsContainer.innerHTML = '';
+            
+            if (recipes.length === 0) {
+                resultsContainer.innerHTML = '<p>No recipes found. Try a different search term.</p>';
+                return;
+            }
+            
+            recipes.forEach(recipeData => {
+                const recipe = recipeData.recipe;
+                const recipeCard = document.createElement('div');
+                recipeCard.className = 'recipe-card';
+                
+                recipeCard.innerHTML = `
+                    <h2 class="recipe-title">${recipe.label}</h2>
+                    <img src="${recipe.image}" alt="${recipe.label}" class="recipe-image">
+                    <p><strong>Source:</strong> ${recipe.source}</p>
+                    <p><strong>Calories:</strong> ${Math.round(recipe.calories)}</p>
+                    <p><strong>Ingredients:</strong></p>
+                    <ul>
+                        ${recipe.ingredientLines.map(ingredient => `<li>${ingredient}</li>`).join('')}
+                    </ul>
+                    <a href="${recipe.url}" target="_blank">View Full Recipe</a>
+                `;
+                
+                resultsContainer.appendChild(recipeCard);
+            });
+        }
+    </script>
+</body>
+</html>
