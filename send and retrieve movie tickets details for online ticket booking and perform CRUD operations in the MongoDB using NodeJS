@@ -1,0 +1,141 @@
+//PUBLIC/INDEX.HTML
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Movie Ticket CRUD</title>
+  <style>
+    body { font-family: Arial; max-width: 500px; margin: 0 auto; padding: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Movie Ticket Booking</h1>
+  
+  <!-- **CREATE** -->
+  <input type="text" id="movie" placeholder="Movie name">
+  <input type="number" id="seats" placeholder="Seats">
+  <button onclick="addTicket()">Add Ticket</button>
+  
+  <!-- **READ** (Display all tickets) -->
+  <table id="tickets">
+    <thead>
+      <tr><th>Movie</th><th>Seats</th><th>Actions</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API_URL = 'http://localhost:3000/tickets';
+
+    // **CREATE** - Add new ticket
+    async function addTicket() {
+      const movie = document.getElementById('movie').value;
+      const seats = document.getElementById('seats').value;
+      
+      await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movie, seats })
+      });
+      
+      loadTickets(); // Refresh list
+    }
+
+    // **READ** - Load all tickets
+    async function loadTickets() {
+      const response = await fetch(API_URL);
+      const tickets = await response.json();
+      
+      const table = document.querySelector('#tickets tbody');
+      table.innerHTML = tickets.map(ticket => `
+        <tr>
+          <td>${ticket.movie}</td>
+          <td>${ticket.seats}</td>
+          <td>
+            <button onclick="editTicket('${ticket._id}')">Edit</button>
+            <button onclick="deleteTicket('${ticket._id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // **UPDATE** - Edit ticket
+    async function editTicket(id) {
+      const newMovie = prompt('Enter new movie name:');
+      const newSeats = prompt('Enter new seat count:');
+      
+      await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ movie: newMovie, seats: newSeats })
+      });
+      
+      loadTickets(); // Refresh list
+    }
+
+    // **DELETE** - Remove ticket
+    async function deleteTicket(id) {
+      if (confirm('Delete this ticket?')) {
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+        loadTickets(); // Refresh list
+      }
+    }
+
+    // Load tickets on startup
+    loadTickets();
+  </script>
+</body>
+</html>
+//server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const app = express();
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/movie-tickets');
+
+// Movie Ticket Model
+const Ticket = mongoose.model('Ticket', { 
+  movie: String, 
+  seats: Number 
+});
+
+// Middleware
+app.use(express.json());
+
+// **CRUD Routes**
+// **C**REATE - Add new ticket
+app.post('/tickets', async (req, res) => {
+  const ticket = new Ticket(req.body);
+  await ticket.save();
+  res.send(ticket);
+});
+
+// **R**EAD - Get all tickets
+app.get('/tickets', async (req, res) => {
+  const tickets = await Ticket.find();
+  res.send(tickets);
+});
+
+// **U**PDATE - Modify a ticket
+app.put('/tickets/:id', async (req, res) => {
+  const ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.send(ticket);
+});
+
+// **D**ELETE - Remove a ticket
+app.delete('/tickets/:id', async (req, res) => {
+  await Ticket.findByIdAndDelete(req.params.id);
+  res.send({ message: 'Ticket deleted!' });
+});
+
+// Start server
+app.listen(3000, () => console.log('Server running on http://localhost:3000'));
