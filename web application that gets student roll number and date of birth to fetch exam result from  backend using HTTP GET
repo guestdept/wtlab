@@ -90,3 +90,24 @@ app.get("/results", async (req, res) => {
 
 // Start server
 app.listen(3000, () => console.log("Server running on port 3000"));
+
+in cmd prompt
+mongosh
+use resultsDB
+db.results.insertMany([
+  {
+    rollNo: "101",
+    dob: "2000-01-01",
+    name: "John Doe",
+    marks: 85,
+    grade: "A"
+  },
+  {
+    rollNo: "102",
+    dob: "2000-02-02",
+    name: "Jane Smith",
+    marks: 92,
+    grade: "A+"
+  }
+])
+
