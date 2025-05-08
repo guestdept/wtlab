@@ -1,0 +1,168 @@
+//App.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Paintings from './components/Paintings';
+import PaintingDetail from './components/PaintingDetail';
+import './App.css';
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Paintings />} />
+          <Route path="/painting/:id" element={<PaintingDetail />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+//Navbar.jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const Navbar = () => {
+  return (
+    <nav>
+      <Link to="/">Home</Link>
+    </nav>
+  );
+};
+
+export default Navbar;
+//Paintings.jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+
+const paintings = [
+  { id: 1, title: 'Mona Lisa', artist: 'Leonardo da Vinci', price: 860000000, image: 'mona-lisa.jpg' },
+  { id: 2, title: 'Starry Night', artist: 'Vincent van Gogh', price: 100000000, image: 'starry-night.jpg' },
+  { id: 3, title: 'The Persistence of Memory', artist: 'Salvador Dalí', price: 150000000, image: 'persistence-memory.jpg' },
+];
+
+const Paintings = () => {
+  return (
+    <div className="paintings">
+      <h1>Painting Collection</h1>
+      <div className="painting-list">
+        {paintings.map(painting => (
+          <div key={painting.id} className="painting-card">
+            <h2>{painting.title}</h2>
+            <p>Artist: {painting.artist}</p>
+            <p>Price: ${painting.price.toLocaleString()}</p>
+            <Link to={`/painting/${painting.id}`}>View Details</Link>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default Paintings;
+//PaintingDetail.jsx
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import CheckoutForm from './CheckoutForm';
+
+const paintings = [
+  { id: 1, title: 'Mona Lisa', artist: 'Leonardo da Vinci', price: 860000000, image: 'mona-lisa.jpg', description: 'The most famous portrait in the world.' },
+  { id: 2, title: 'Starry Night', artist: 'Vincent van Gogh', price: 100000000, image: 'starry-night.jpg', description: 'A swirling night sky over a quiet town.' },
+  { id: 3, title: 'The Persistence of Memory', artist: 'Salvador Dalí', price: 150000000, image: 'persistence-memory.jpg', description: 'Surreal melting clocks in a dreamlike landscape.' },
+];
+
+const PaintingDetail = () => {
+  const { id } = useParams();
+  const painting = paintings.find(p => p.id === parseInt(id));
+  const [showCheckout, setShowCheckout] = useState(false);
+
+  if (!painting) return <div>Painting not found</div>;
+
+  return (
+    <div className="painting-detail">
+      <h1>{painting.title}</h1>
+      <p>Artist: {painting.artist}</p>
+      <p>Price: ${painting.price.toLocaleString()}</p>
+      <p>{painting.description}</p>
+      
+      <button onClick={() => setShowCheckout(true)}>Purchase This Painting</button>
+      
+      {showCheckout && (
+        <CheckoutForm 
+          painting={painting} 
+          onCancel={() => setShowCheckout(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default PaintingDetail;
+//CheckoutForm.jsx
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const CheckoutForm = ({ painting, onCancel }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    address: '',
+    paintingId: painting.id,
+    paintingTitle: painting.title,
+    amount: painting.price
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // In a real app, this would send to your backend
+      console.log('Purchase data:', formData);
+      
+      // Simulate API call
+      const response = await axios.post('https://jsonplaceholder.typicode.com/posts', formData);
+      console.log('Server response:', response.data);
+      
+      alert('Purchase successful! Check console for details.');
+      onCancel();
+    } catch (error) {
+      console.error('Error submitting purchase:', error);
+      alert('Error processing purchase. Please try again.');
+    }
+  };
+
+  return (
+    <div className="checkout-form">
+      <h2>Purchase: {painting.title}</h2>
+      <form onSubmit={handleSubmit}>
+        <label>
+          Full Name:
+          <input type="text" name="name" value={formData.name} onChange={handleChange} required />
+        </label>
+        <label>
+          Email:
+          <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+        </label>
+        <label>
+          Shipping Address:
+          <textarea name="address" value={formData.address} onChange={handleChange} required />
+        </label>
+        <div className="form-actions">
+          <button type="button" onClick={onCancel}>Cancel</button>
+          <button type="submit">Complete Purchase</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default CheckoutForm;
