@@ -1,0 +1,155 @@
+tutorial-website/
+├── public/
+│   ├── index.html
+│   ├── courses.html
+│   ├── tutorial.html
+│   ├── contact.html
+│   └── 404.html
+├── app.js
+└── package.json
+
+mkdir tutorial-website
+cd tutorial-website
+npm init -y
+npm install express body-parser
+
+app.js
+const express = require('express');
+const path = require('path');
+const bodyParser = require('body-parser');
+
+const app = express();
+const PORT = 3000;
+
+// Middleware
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/courses', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'courses.html'));
+});
+
+app.get('/tutorial/:id', (req, res) => {
+  // Dynamic route for tutorial pages
+  res.sendFile(path.join(__dirname, 'public', 'tutorial.html'));
+});
+
+// Handle contact form submission
+app.post('/contact', (req, res) => {
+  console.log('Form submission:', req.body);
+  res.redirect('/thank-you');
+});
+
+app.get('/thank-you', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Thank You</title>
+    </head>
+    <body>
+      <h1>Thank You!</h1>
+      <p>Your message has been received.</p>
+      <a href="/">Return Home</a>
+    </body>
+    </html>
+  `);
+});
+
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
+index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tutorial Website</title>
+</head>
+<body>
+  <h1>Welcome to Our Tutorial Website</h1>
+  <nav>
+    <a href="/">Home</a> |
+    <a href="/courses">Courses</a> |
+    <a href="/contact.html">Contact</a>
+  </nav>
+</body>
+</html>
+
+courses.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Our Courses</title>
+</head>
+<body>
+  <h1>Available Courses</h1>
+  <ul>
+    <li><a href="/tutorial/1">JavaScript Basics</a></li>
+    <li><a href="/tutorial/2">Node.js Fundamentals</a></li>
+    <li><a href="/tutorial/3">Express Routing</a></li>
+  </ul>
+</body>
+</html>
+tutorial.html
+html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Tutorial</title>
+</head>
+<body>
+  <h1 id="tutorial-title">Tutorial</h1>
+  <div id="content">Loading tutorial content...</div>
+  
+  <script>
+    // Get tutorial ID from URL
+    const pathParts = window.location.pathname.split('/');
+    const tutorialId = pathParts[pathParts.length - 1];
+    
+    // Update page content based on ID
+    document.getElementById('tutorial-title').textContent = `Tutorial ${tutorialId}`;
+    document.getElementById('content').textContent = `This is the content for tutorial ${tutorialId}`;
+  </script>
+</body>
+</html>
+
+contact.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Contact Us</title>
+</head>
+<body>
+  <h1>Contact Form</h1>
+  <form action="/contact" method="POST">
+    <label>Name: <input type="text" name="name" required></label><br>
+    <label>Email: <input type="email" name="email" required></label><br>
+    <label>Message: <textarea name="message" required></textarea></label><br>
+    <button type="submit">Send Message</button>
+  </form>
+</body>
+</html>
+
+404.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Page Not Found</title>
+</head>
+<body>
+  <h1>404 - Page Not Found</h1>
+  <p>The page you requested doesn't exist.</p>
+  <a href="/">Return Home</a>
+</body>
+</html>
