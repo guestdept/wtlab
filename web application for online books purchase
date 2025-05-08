@@ -1,0 +1,173 @@
+src/
+├── components/
+│   ├── BookList.jsx
+│   ├── BookCard.jsx
+│   ├── Cart.jsx
+│   └── Navbar.jsx
+├── App.jsx
+├── main.jsx
+└── hooks/
+    └── useFetchBooks.js
+
+npm create vite@latest book-store -- --template react
+cd book-store
+npm install
+
+App.jsx
+import { useState } from 'react';
+import Navbar from './components/Navbar';
+import BookList from './components/BookList';
+import Cart from './components/Cart';
+
+export default function App() {
+  const [cart, setCart] = useState([]);
+  const [orderComplete, setOrderComplete] = useState(false);
+
+  const addToCart = (book) => {
+    setCart([...cart, book]);
+    setOrderComplete(false);
+  };
+
+  const removeFromCart = (bookId) => {
+    setCart(cart.filter(book => book.id !== bookId));
+  };
+
+  const checkout = () => {
+    // In a real app, you would send the order to a backend here
+    console.log('Order placed:', cart);
+    setCart([]);
+    setOrderComplete(true);
+    
+    // Reset order complete status after 3 seconds
+    setTimeout(() => setOrderComplete(false), 3000);
+  };
+
+  return (
+    <div>
+      <Navbar cartCount={cart.length} />
+      {orderComplete && (
+        <div style={{ background: 'green', color: 'white', padding: '10px' }}>
+          Order placed successfully! Your cart has been cleared.
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: '20px', padding: '20px' }}>
+        <BookList addToCart={addToCart} />
+        <Cart 
+          cart={cart} 
+          removeFromCart={removeFromCart} 
+          checkout={checkout} 
+        />
+      </div>
+    </div>
+  );
+}
+
+main.jsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+
+BookCard.jsx
+export default function BookCard({ book, addToCart }) {
+    return (
+      <div style={{ border: '1px solid #ddd', padding: '10px' }}>
+        <img 
+          src={book.image} 
+          alt={book.title} 
+          width="100" 
+          style={{ height: '150px', objectFit: 'cover' }} 
+        />
+        <h3>{book.title}</h3>
+        <p><strong>Author:</strong> {book.author}</p>
+        <p><strong>Price:</strong> ${book.price}</p>
+        <button onClick={() => addToCart(book)}>Add to Cart</button>
+      </div>
+    );
+  }
+
+BookList.jsx
+export default function BookCard({ book, addToCart }) {
+    return (
+      <div style={{ border: '1px solid #ddd', padding: '10px' }}>
+        <img 
+          src={book.image} 
+          alt={book.title} 
+          width="100" 
+          style={{ height: '150px', objectFit: 'cover' }} 
+        />
+        <h3>{book.title}</h3>
+        <p><strong>Author:</strong> {book.author}</p>
+        <p><strong>Price:</strong> ${book.price}</p>
+        <button onClick={() => addToCart(book)}>Add to Cart</button>
+      </div>
+    );
+  }
+
+Cart.jsx
+export default function Cart({ cart, removeFromCart, checkout }) {
+    const total = cart.reduce((sum, book) => sum + book.price, 0);
+  
+    return (
+      <div style={{ border: '1px solid #ddd', padding: '10px' }}>
+        <h2>Your Cart ({cart.length})</h2>
+        {cart.length === 0 ? (
+          <p>Your cart is empty</p>
+        ) : (
+          <div>
+            {cart.map(book => (
+              <div key={book.id} style={{ marginBottom: '10px' }}>
+                <span>{book.title} - ${book.price}</span>
+                <button onClick={() => removeFromCart(book.id)}>Remove</button>
+              </div>
+            ))}
+            <h3>Total: ${total.toFixed(2)}</h3>
+            <button onClick={checkout}>Checkout</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+Navbar.jsx
+export default function Navbar({ cartCount }) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: '#f0f0f0' }}>
+        <h1>Online Book Store</h1>
+        <div>
+          <span>Cart ({cartCount})</span>
+        </div>
+      </div>
+    );
+  }
+
+useFetchBooks.js
+import { useState, useEffect } from 'react';
+
+export default function useFetchBooks() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('https://www.googleapis.com/books/v1/volumes?q=programming&maxResults=6')
+      .then(res => res.json())
+      .then(data => {
+        const formattedBooks = data.items.map(book => ({
+          id: book.id,
+          title: book.volumeInfo.title,
+          price: Math.floor(Math.random() * 50) + 10, // Random price (since Google Books doesn't provide prices)
+          image: book.volumeInfo.imageLinks?.thumbnail || 'https://via.placeholder.com/150',
+          author: book.volumeInfo.authors?.[0] || 'Unknown Author'
+        }));
+        setBooks(formattedBooks);
+        setLoading(false);
+      });
+  }, []);
+
+  return { books, loading };
+}
