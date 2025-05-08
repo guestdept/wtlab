@@ -1,0 +1,143 @@
+//index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CRUD App</title>
+  <style>
+    body { font-family: Arial; max-width: 500px; margin: 0 auto; padding: 20px; }
+    input, button { padding: 8px; margin: 5px 0; width: 100%; }
+    button { background: #4CAF50; color: white; border: none; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Items</h1>
+  
+  <input type="text" id="name" placeholder="Item name">
+  <input type="text" id="description" placeholder="Description">
+  <input type="hidden" id="itemId">
+  <button onclick="saveItem()">Save</button>
+  
+  <table id="itemsTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // Save or update item
+    async function saveItem() {
+      const item = {
+        name: document.getElementById('name').value,
+        description: document.getElementById('description').value
+      };
+      const id = document.getElementById('itemId').value;
+
+      const url = id ? `http://localhost:3000/items/${id}` : 'http://localhost:3000/items';
+      const method = id ? 'PUT' : 'POST';
+
+      await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item)
+      });
+
+      document.getElementById('name').value = '';
+      document.getElementById('description').value = '';
+      document.getElementById('itemId').value = '';
+      loadItems();
+    }
+
+    // Load items
+    async function loadItems() {
+      const response = await fetch('http://localhost:3000/items');
+      const items = await response.json();
+      
+      const table = document.querySelector('#itemsTable tbody');
+      table.innerHTML = items.map(item => `
+        <tr>
+          <td>${item.name}</td>
+          <td>${item.description}</td>
+          <td>
+            <button onclick="editItem('${item._id}')">Edit</button>
+            <button onclick="deleteItem('${item._id}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Edit item
+    async function editItem(id) {
+      const response = await fetch(`http://localhost:3000/items/${id}`);
+      const item = await response.json();
+      
+      document.getElementById('name').value = item.name;
+      document.getElementById('description').value = item.description;
+      document.getElementById('itemId').value = item._id;
+    }
+
+    // Delete item
+    async function deleteItem(id) {
+      await fetch(`http://localhost:3000/items/${id}`, { method: 'DELETE' });
+      loadItems();
+    }
+
+    // Load items on start
+    loadItems();
+  </script>
+</body>
+</html>
+//server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const app = express();
+
+// Connect to MongoDB
+mongoose.connect('mongodb://localhost:27017/crudDB');
+
+// Item Model
+const Item = mongoose.model('Item', { name: String, description: String });
+
+// Middleware
+app.use(express.json());
+
+// Routes
+// CREATE (POST)
+app.post('/items', async (req, res) => {
+  const item = new Item(req.body);
+  await item.save();
+  res.send(item);
+});
+
+// READ (GET all)
+app.get('/items', async (req, res) => {
+  const items = await Item.find();
+  res.send(items);
+});
+
+// READ (GET single)
+app.get('/items/:id', async (req, res) => {
+  const item = await Item.findById(req.params.id);
+  res.send(item);
+});
+
+// UPDATE (PUT)
+app.put('/items/:id', async (req, res) => {
+  const item = await Item.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  res.send(item);
+});
+
+// DELETE
+app.delete('/items/:id', async (req, res) => {
+  await Item.findByIdAndDelete(req.params.id);
+  res.send({ message: 'Item deleted' });
+});
+
+// Start server
+app.listen(3000, () => console.log('Server running on port 3000'));
