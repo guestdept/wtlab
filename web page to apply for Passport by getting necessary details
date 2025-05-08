@@ -1,0 +1,107 @@
+passport-application/
+├── public/
+│   └── index.html
+├── server.js
+├── package.json
+
+public/index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Passport Application Form</title>
+</head>
+<body>
+  <h1>Passport Application</h1>
+
+  <form id="passportForm">
+    <label>Full Name: <input type="text" id="fullName"></label><br><br>
+    <label>Date of Birth: <input type="date" id="dob"></label><br><br>
+    <label>Gender: 
+      <select id="gender">
+        <option value="">Select</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+      </select>
+    </label><br><br>
+    <label>Phone Number: <input type="text" id="phone"></label><br><br>
+    <label>Email: <input type="text" id="email"></label><br><br>
+    <label>Address: <textarea id="address"></textarea></label><br><br>
+    <label>Nationality: <input type="text" id="nationality"></label><br><br>
+    <label>Passport Type: 
+      <select id="type">
+        <option value="">Select</option>
+        <option value="Ordinary">Ordinary</option>
+        <option value="Diplomatic">Diplomatic</option>
+        <option value="Official">Official</option>
+      </select>
+    </label><br><br>
+
+    <button type="submit">Submit Application</button>
+  </form>
+
+  <div id="message" style="color: green;"></div>
+
+  <script>
+    document.getElementById("passportForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const fullName = document.getElementById("fullName").value.trim();
+      const dob = document.getElementById("dob").value;
+      const gender = document.getElementById("gender").value;
+      const phone = document.getElementById("phone").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const address = document.getElementById("address").value.trim();
+      const nationality = document.getElementById("nationality").value.trim();
+      const type = document.getElementById("type").value;
+
+      const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      const phoneRegex = /^\d{10}$/;
+
+      if (!fullName) return alert("Full Name is required.");
+      if (!dob) return alert("Date of Birth is required.");
+      if (!gender) return alert("Gender is required.");
+      if (!phoneRegex.test(phone)) return alert("Phone number must be 10 digits.");
+      if (!emailRegex.test(email)) return alert("Enter a valid email.");
+      if (!address) return alert("Address is required.");
+      if (!nationality) return alert("Nationality is required.");
+      if (!type) return alert("Passport type is required.");
+
+      const data = { fullName, dob, gender, phone, email, address, nationality, type };
+
+      const response = await fetch("/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        document.getElementById("message").innerText = "Application submitted successfully!";
+        document.getElementById("passportForm").reset();
+      } else {
+        document.getElementById("message").innerText = "Submission failed.";
+      }
+    });
+  </script>
+</body>
+</html>
+
+server.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const path = require('path');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Handle POST request
+app.post('/apply', (req, res) => {
+  console.log("Passport Application Received:");
+  console.log(req.body);
+  res.status(201).json({ message: "Application received" });
+});
+
+app.listen(3000, () => {
+  console.log("Server running at http://localhost:3000");
+});
