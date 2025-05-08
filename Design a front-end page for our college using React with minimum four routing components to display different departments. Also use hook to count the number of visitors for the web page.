@@ -1,0 +1,85 @@
+//app.jsx
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
+import Home from './components/Home';
+import Department from './components/Department';
+
+function App() {
+  return (
+    <Router>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px' }}>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/cs" element={<Department name="Computer Science" />} />
+          <Route path="/ee" element={<Department name="Electrical Engineering" />} />
+          <Route path="/me" element={<Department name="Mechanical Engineering" />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+//navbar.jsx
+import React from 'react';
+import { Link } from 'react-router-dom';
+import VisitorCounter from './VisitorCounter';
+
+const Navbar = () => {
+  return (
+    <nav style={{ display: 'flex', gap: '20px', marginBottom: '30px' }}>
+      <Link to="/">Home</Link>
+      <Link to="/cs">Computer Science</Link>
+      <Link to="/ee">Electrical</Link>
+      <Link to="/me">Mechanical</Link>
+      <VisitorCounter />
+    </nav>
+  );
+};
+
+export default Navbar;
+//home.jsx
+import React from 'react';
+
+const Home = () => {
+  return (
+    <div>
+      <h1>Welcome to Our College</h1>
+      <p>Select a department from the navigation</p>
+    </div>
+  );
+};
+
+export default Home;
+//department.jsx
+import React from 'react';
+
+const Department = ({ name }) => {
+  return (
+    <div>
+      <h2>{name} Department</h2>
+      <p>This is the {name.toLowerCase()} department page.</p>
+    </div>
+  );
+};
+
+export default Department;
+//visitorcount.jsx
+import React, { useState, useEffect } from 'react';
+
+const VisitorCounter = () => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    const savedCount = parseInt(localStorage.getItem('visitors')) || 0;
+    const newCount = savedCount + 1;
+    localStorage.setItem('visitors', newCount);
+    setCount(newCount);
+  }, []);
+
+  return <div style={{ marginLeft: 'auto' }}>Visitors: {count}</div>;
+};
+
+export default VisitorCounter;
