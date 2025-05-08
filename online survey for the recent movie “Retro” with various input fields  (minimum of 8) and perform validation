@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Retro Movie Survey</title>
+</head>
+<body>
+  <h1>Retro Movie Survey</h1>
+
+  <form id="surveyForm">
+    <label>Full Name: <input type="text" id="name"></label><br><br>
+
+    <label>Email: <input type="text" id="email"></label><br><br>
+
+    <label>Age: <input type="number" id="age"></label><br><br>
+
+    <label>Favorite Scene: <input type="text" id="scene"></label><br><br>
+
+    <label>Rating (1-5):
+      <select id="rating">
+        <option value="">Select</option>
+        <option value="1">1 - Poor</option>
+        <option value="2">2 - Fair</option>
+        <option value="3">3 - Good</option>
+        <option value="4">4 - Very Good</option>
+        <option value="5">5 - Excellent</option>
+      </select>
+    </label><br><br>
+
+    <label>Would you recommend this movie?<br>
+      <input type="radio" name="recommend" value="yes"> Yes
+      <input type="radio" name="recommend" value="no"> No
+    </label><br><br>
+
+    <label>What did you like?<br>
+      <input type="checkbox" name="likes" value="acting"> Acting<br>
+      <input type="checkbox" name="likes" value="music"> Music<br>
+      <input type="checkbox" name="likes" value="story"> Story<br>
+    </label><br><br>
+
+    <label>Your Review:<br>
+      <textarea id="review" rows="4" cols="40"></textarea>
+    </label><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="message" style="color: green;"></div>
+
+  <script>
+    document.getElementById("surveyForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const age = parseInt(document.getElementById("age").value.trim());
+      const scene = document.getElementById("scene").value.trim();
+      const rating = document.getElementById("rating").value;
+      const recommend = document.querySelector("input[name='recommend']:checked")?.value;
+      const likes = Array.from(document.querySelectorAll("input[name='likes']:checked")).map(cb => cb.value);
+      const review = document.getElementById("review").value.trim();
+
+      // Validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!name) return alert("Name is required.");
+      if (!emailRegex.test(email)) return alert("Enter a valid email.");
+      if (isNaN(age) || age < 10 || age > 100) return alert("Enter a valid age (10–100).");
+      if (!scene) return alert("Favorite scene is required.");
+      if (!rating) return alert("Please select a rating.");
+      if (!recommend) return alert("Please choose Yes or No for recommendation.");
+      if (likes.length === 0) return alert("Select at least one thing you liked.");
+      if (review.length < 20) return alert("Review must be at least 20 characters.");
+
+      const data = {
+        name, email, age, scene, rating, recommend, likes, review
+      };
+
+      console.log("Simulating POST data:", data);
+
+      document.getElementById("message").innerText = "Survey submitted successfully!";
+      document.getElementById("surveyForm").reset();
+    });
+  </script>
+</body>
+</html>
