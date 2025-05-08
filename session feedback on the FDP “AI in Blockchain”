@@ -1,0 +1,106 @@
+fdp-feedback/
+├── public/
+│   └── index.html
+├── server.js
+├── package.json
+
+public/index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FDP Feedback - AI in Blockchain</title>
+</head>
+<body>
+  <h1>FDP Feedback - AI in Blockchain</h1>
+
+  <form id="feedbackForm">
+    <label>Full Name: <input type="text" id="name"></label><br><br>
+
+    <label>Email: <input type="text" id="email"></label><br><br>
+
+    <label>Department: <input type="text" id="dept"></label><br><br>
+
+    <label>Session Rating (1-5): 
+      <select id="rating">
+        <option value="">Select</option>
+        <option value="1">1 - Poor</option>
+        <option value="2">2 - Fair</option>
+        <option value="3">3 - Good</option>
+        <option value="4">4 - Very Good</option>
+        <option value="5">5 - Excellent</option>
+      </select>
+    </label><br><br>
+
+    <label>Comments:<br>
+      <textarea id="comments" rows="4" cols="40"></textarea>
+    </label><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="response" style="margin-top:20px; color:green;"></div>
+
+  <script>
+    document.getElementById("feedbackForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const dept = document.getElementById("dept").value.trim();
+      const rating = document.getElementById("rating").value;
+      const comments = document.getElementById("comments").value.trim();
+
+      const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+      if (!name) return alert("Name is required.");
+      if (!emailRegex.test(email)) return alert("Enter a valid email.");
+      if (!dept) return alert("Department is required.");
+      if (!rating) return alert("Please select a rating.");
+      if (comments.length < 10) return alert("Please write at least 10 characters in comments.");
+
+      const data = { name, email, dept, rating, comments };
+
+      try {
+        const response = await fetch('/submit-feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        document.getElementById("response").innerText = result.message;
+        document.getElementById("feedbackForm").reset();
+      } catch (err) {
+        document.getElementById("response").innerText = "Submission failed.";
+      }
+    });
+  </script>
+</body>
+</html>
+
+server.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const path = require('path');
+
+const app = express();
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
+
+// POST route to receive feedback
+app.post('/submit-feedback', (req, res) => {
+  const { name, email, dept, rating, comments } = req.body;
+
+  let feedbackResponse = "Thank you for your feedback!";
+  if (rating <= 2) {
+    feedbackResponse = "We're sorry the session didn't meet your expectations.";
+  } else if (rating == 5) {
+    feedbackResponse = "We're glad you found the session excellent!";
+  }
+
+  console.log("Feedback received:", req.body);
+  res.json({ message: `${feedbackResponse} (${name}, ${dept})` });
+});
+
+app.listen(3000, () => {
+  console.log("Server running at http://localhost:3000");
+});
