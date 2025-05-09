@@ -175,3 +175,47 @@ const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
+
+simple index.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Electricity Billing System</title>
+</head>
+<body>
+  <script>
+    async function calculateBill() {
+      const startInput = prompt("Enter starting meter reading:");
+      const endInput = prompt("Enter ending meter reading:");
+
+      const start = parseInt(startInput);
+      const end = parseInt(endInput);
+
+      if (isNaN(start) || isNaN(end)) {
+        alert("Please enter valid numbers.");
+        return;
+      }
+
+      if (end <= start) {
+        alert("Ending reading must be greater than starting reading.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`http://localhost:3000/calculate?start=${start}&end=${end}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          alert(`Units Consumed: ${data.units}\nTotal Amount: ₹${data.amount}`);
+        } else {
+          alert("Error: " + (data.error || "Failed to calculate"));
+        }
+      } catch (err) {
+        alert("Server error: " + err.message);
+      }
+    }
+
+    calculateBill();
+  </script>
+</body>
+</html>
